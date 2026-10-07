@@ -1,0 +1,143 @@
+@import "@fontsource/fredoka";
+@import "@fontsource/plus-jakarta-sans";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-body bg-neutral-950 text-neutral-900 antialiased select-none min-h-screen overflow-x-hidden;
+    touch-action: manipulation;
+  }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+
+@keyframes pop {
+  0% { transform: scale(0.95); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+@keyframes floatSlow {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes sunRays {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes heatShimmer {
+  0%, 100% { transform: scale(1) translateY(0); opacity: 0.45; }
+  50% { transform: scale(1.1) translateY(-15px); opacity: 0.8; }
+}
+
+@keyframes lightningFlash {
+  0%, 89%, 93%, 97%, 100% { opacity: 0; }
+  90%, 92% { opacity: 0.85; }
+  94%, 96% { opacity: 0.5; }
+}
+
+@keyframes rainDrop {
+  0% {
+    transform: translateY(-80px) translateX(-20px);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(110vh) translateX(50px);
+    opacity: 0.2;
+  }
+}
+
+@keyframes snowDrift {
+  0% {
+    transform: translateY(-50px) translateX(0px) rotate(0deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.9;
+  }
+  50% {
+    transform: translateY(50vh) translateX(25px) rotate(180deg);
+  }
+  100% {
+    transform: translateY(105vh) translateX(-25px) rotate(360deg);
+    opacity: 0.2;
+  }
+}
+
+@keyframes mistRoll {
+  0% { transform: translateX(-20%); opacity: 0.25; }
+  50% { transform: translateX(20%); opacity: 0.55; }
+  100% { transform: translateX(-20%); opacity: 0.25; }
+}
+
+@keyframes starPulse {
+  0%, 100% { transform: scale(0.85); opacity: 0.25; }
+  50% { transform: scale(1.25); opacity: 1; }
+}
+
+@keyframes bgGridPan {
+  0% { background-position: 0 0; }
+  100% { background-position: 48px 48px; }
+}
+
+.animate-wiggle {
+  animation: wiggle 0.4s ease-in-out infinite alternate;
+}
+
+.animate-pop {
+  animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.animate-float {
+  animation: floatSlow 3s ease-in-out infinite;
+}
+
+.animate-sun-rays {
+  animation: sunRays 28s linear infinite;
+}
+
+.animate-heat-shimmer {
+  animation: heatShimmer 4s ease-in-out infinite;
+}
+
+.animate-lightning {
+  animation: lightningFlash 7s infinite ease-in-out;
+}
+
+.animate-mist {
+  animation: mistRoll 16s ease-in-out infinite;
+}
+
+.animate-star {
+  animation: starPulse 2.8s ease-in-out infinite;
+}
+
+.animate-grid-pan {
+  animation: bgGridPan 20s linear infinite;
+}
+
+/* Custom scrollbar for sleek neo-brutalist preset tray */
+::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #111;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb {
+  background: #FFE600;
+  border-radius: 9999px;
+  border: 1px solid #000;
+}
