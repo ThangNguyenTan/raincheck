@@ -16,12 +16,67 @@ export interface Coordinates {
   lon: number;
 }
 
-export const FALLBACK_LOCATIONS: { name: string; coords: Coordinates }[] = [
-  { name: 'Ho Chi Minh City 🇻🇳', coords: { lat: 10.8231, lon: 106.6297 } },
-  { name: 'Da Lat 🌲', coords: { lat: 11.9404, lon: 108.4583 } },
-  { name: 'Tokyo 🗼', coords: { lat: 35.6762, lon: 139.6503 } },
-  { name: 'Reykjavik 🧊', coords: { lat: 64.1466, lon: -21.9426 } },
-  { name: 'Death Valley 🔥', coords: { lat: 36.5323, lon: -116.9325 } },
+export interface LocationInfo {
+  specific: string; // Detailed locality: neighborhood, street, district, ward
+  area: string;     // Broad region: city, province/state, country
+  full: string;     // Combined readable string
+}
+
+export interface HourlyForecastItem {
+  time: string;           // "NOW", "9 PM", "10 PM"
+  rawTime: string;        // ISO timestamp
+  tempC: number;
+  weatherCode: number;
+  isDay: number;
+  precipitationProb: number;
+}
+
+export const FALLBACK_LOCATIONS: { name: string; location: LocationInfo; coords: Coordinates }[] = [
+  {
+    name: 'Ho Chi Minh City 🇻🇳',
+    location: {
+      specific: 'Bến Nghé, District 1',
+      area: 'Ho Chi Minh City, Vietnam',
+      full: 'Bến Nghé, District 1, Ho Chi Minh City',
+    },
+    coords: { lat: 10.8231, lon: 106.6297 },
+  },
+  {
+    name: 'Da Lat 🌲',
+    location: {
+      specific: 'Ward 1, Xuan Huong Lake',
+      area: 'Da Lat, Lam Dong, Vietnam',
+      full: 'Ward 1, Xuan Huong Lake, Da Lat',
+    },
+    coords: { lat: 11.9404, lon: 108.4583 },
+  },
+  {
+    name: 'Tokyo 🗼',
+    location: {
+      specific: 'Shibuya Crossing, Shibuya Ward',
+      area: 'Tokyo, Japan',
+      full: 'Shibuya Crossing, Shibuya, Tokyo',
+    },
+    coords: { lat: 35.6762, lon: 139.6503 },
+  },
+  {
+    name: 'Reykjavik 🧊',
+    location: {
+      specific: 'Miðborg (Downtown)',
+      area: 'Reykjavik, Capital Region, Iceland',
+      full: 'Miðborg, Reykjavik, Iceland',
+    },
+    coords: { lat: 64.1466, lon: -21.9426 },
+  },
+  {
+    name: 'Death Valley 🔥',
+    location: {
+      specific: 'Furnace Creek Visitor Basin',
+      area: 'Inyo County, California, USA',
+      full: 'Furnace Creek Basin, Death Valley, CA',
+    },
+    coords: { lat: 36.5323, lon: -116.9325 },
+  },
 ];
 
 export function toFahrenheit(celsius: number): number {
@@ -37,7 +92,12 @@ export function formatTemp(celsius: number, unit: 'C' | 'F'): string {
 
 export function useWeather() {
   const [data, setData] = useState<WeatherData | null>(null);
-  const [locationName, setLocationName] = useState<string>('Detecting location...');
+  const [location, setLocation] = useState<LocationInfo>({
+    specific: 'Detecting...',
+    area: 'Triangulating radar',
+    full: 'Detecting precise coordinates...',
+  });
+  const [hourlyForecast, setHourlyForecast] = useState<HourlyForecastItem[]>([]);
   const [coords, setCoords] = useState<Coordinates | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,51 +105,83 @@ export function useWeather() {
   const [vibe, setVibe] = useState<WeatherVibe | null>(null);
   const [, startTransition] = useTransition();
 
-  // Reverse Geocoding with OpenStreetMap Nominatim
-  const fetchCityName = async (lat: number, lon: number): Promise<string> => {
+  // Reverse Geocoding with OpenStreetMap Nominatim for granular location detection
+  const fetchDetailedLocation = async (lat: number, lon: number): Promise<LocationInfo> => {
     try {
-      const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`;
+      const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`;
       const res = await fetch(url, {
         headers: {
           'Accept': 'application/json',
-          'User-Agent': 'Raincheck-Weather-Roaster/1.0',
+          'User-Agent': 'Raincheck-Weather-Roaster/2.0',
         },
       });
 
       if (!res.ok) {
-        return 'Somewhere on Earth';
+        return {
+          specific: 'Local Sector',
+          area: 'Somewhere on Earth',
+          full: 'Somewhere on Earth',
+        };
       }
 
       const json = await res.json();
       const addr = json.address;
-      if (!addr) return 'Somewhere on Earth';
+      if (!addr) {
+        return {
+          specific: 'Local Sector',
+          area: 'Somewhere on Earth',
+          full: 'Somewhere on Earth',
+        };
+      }
 
-      return (
-        addr.city ||
-        addr.town ||
-        addr.village ||
-        addr.suburb ||
-        addr.county ||
-        addr.state ||
-        'Somewhere on Earth'
-      );
+      // Detailed local components: street / amenity + neighborhood / ward / district
+      const roadOrLandmark = addr.road || addr.pedestrian || addr.amenity || addr.building;
+      const districtOrWard = addr.suburb || addr.quarter || addr.neighbourhood || addr.city_district || addr.hamlet;
+
+      let specific = [roadOrLandmark, districtOrWard].filter(Boolean).join(', ');
+
+      // Broader components: city / town + state / country
+      const cityOrTown = addr.city || addr.town || addr.village || addr.municipality || addr.county;
+      const stateOrCountry = addr.state || addr.country;
+
+      let area = [cityOrTown, stateOrCountry].filter(Boolean).join(', ');
+
+      // Fallbacks if specific is still empty
+      if (!specific) {
+        specific = cityOrTown || 'Local Sector';
+        area = stateOrCountry || 'Earth';
+      }
+
+      const full = [specific, area].filter(Boolean).join(' • ');
+
+      return { specific, area, full };
     } catch {
-      return 'Somewhere on Earth';
+      return {
+        specific: 'Satellite Blindspot',
+        area: 'Somewhere on Earth',
+        full: 'Somewhere on Earth',
+      };
     }
   };
 
-  // Fetch Open-Meteo Weather
+  // Fetch Open-Meteo Weather with 24h Hourly Forecast
   const fetchWeather = useCallback(
-    async (targetCoords: Coordinates, customCityName?: string) => {
+    async (targetCoords: Coordinates, customLoc?: string | LocationInfo) => {
       setIsLoading(true);
       setError(null);
 
       try {
-        const [weatherRes, cityName] = await Promise.all([
+        const [weatherRes, locInfo] = await Promise.all([
           fetch(
-            `https://api.open-meteo.com/v1/forecast?latitude=${targetCoords.lat}&longitude=${targetCoords.lon}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,is_day,apparent_temperature&hourly=weather_code,temperature_2m&timezone=auto`
+            `https://api.open-meteo.com/v1/forecast?latitude=${targetCoords.lat}&longitude=${targetCoords.lon}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,is_day,apparent_temperature&hourly=weather_code,temperature_2m,precipitation_probability,is_day&timezone=auto`
           ),
-          customCityName ? Promise.resolve(customCityName) : fetchCityName(targetCoords.lat, targetCoords.lon),
+          customLoc
+            ? Promise.resolve(
+                typeof customLoc === 'string'
+                  ? { specific: customLoc, area: '', full: customLoc }
+                  : customLoc
+              )
+            : fetchDetailedLocation(targetCoords.lat, targetCoords.lon),
         ]);
 
         if (!weatherRes.ok) {
@@ -108,6 +200,37 @@ export function useWeather() {
           isDay: current.is_day,
         };
 
+        // Extract next 24-hour timeline from hourly data
+        const rawHourly = weatherJson.hourly;
+        let next24Hours: HourlyForecastItem[] = [];
+
+        if (rawHourly && Array.isArray(rawHourly.time)) {
+          const now = new Date();
+          // Find closest current hour
+          const currentHourPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${String(now.getHours()).padStart(2, '0')}`;
+          let startIndex = rawHourly.time.findIndex((t: string) => t.startsWith(currentHourPrefix));
+          if (startIndex === -1) {
+            startIndex = rawHourly.time.findIndex((t: string) => new Date(t) >= now);
+            if (startIndex === -1) startIndex = 0;
+          }
+
+          next24Hours = rawHourly.time.slice(startIndex, startIndex + 24).map((timeStr: string, idx: number) => {
+            const actualIndex = startIndex + idx;
+            const itemDate = new Date(timeStr);
+            const isNow = idx === 0;
+            const timeLabel = isNow ? 'NOW' : itemDate.toLocaleTimeString([], { hour: 'numeric', hour12: true });
+
+            return {
+              time: timeLabel,
+              rawTime: timeStr,
+              tempC: rawHourly.temperature_2m[actualIndex] ?? 0,
+              weatherCode: rawHourly.weather_code[actualIndex] ?? 0,
+              isDay: rawHourly.is_day ? rawHourly.is_day[actualIndex] ?? 1 : (itemDate.getHours() >= 6 && itemDate.getHours() < 18 ? 1 : 0),
+              precipitationProb: rawHourly.precipitation_probability ? rawHourly.precipitation_probability[actualIndex] ?? 0 : 0,
+            };
+          });
+        }
+
         const resolvedVibe = resolveVibe(
           weatherPayload.weatherCode,
           weatherPayload.temperature,
@@ -117,7 +240,8 @@ export function useWeather() {
         startTransition(() => {
           setData(weatherPayload);
           setCoords(targetCoords);
-          setLocationName(cityName);
+          setLocation(locInfo);
+          setHourlyForecast(next24Hours);
           setVibe(resolvedVibe);
           setIsLoading(false);
         });
@@ -137,7 +261,7 @@ export function useWeather() {
     if (!navigator.geolocation) {
       setError('Your browser is living in 1995. No Geolocation support.');
       // Auto fallback to Ho Chi Minh City
-      fetchWeather(FALLBACK_LOCATIONS[0].coords, FALLBACK_LOCATIONS[0].name);
+      fetchWeather(FALLBACK_LOCATIONS[0].coords, FALLBACK_LOCATIONS[0].location);
       return;
     }
 
@@ -177,7 +301,7 @@ export function useWeather() {
     );
   }, [fetchWeather]);
 
-  // Apply textbook preset simulation
+  // Apply textbook preset simulation with synthesized 24h hourly curve
   const applyPreset = useCallback(
     (preset: { code: number; tempC: number; isDay: number; name: string }) => {
       setIsLoading(true);
@@ -193,11 +317,34 @@ export function useWeather() {
         isDay: preset.isDay,
       };
 
+      // Generate 24 hours of simulated progression matching the preset
+      const simulatedHourly: HourlyForecastItem[] = Array.from({ length: 24 }).map((_, idx) => {
+        const hourOffset = idx;
+        const currentH = (new Date().getHours() + hourOffset) % 24;
+        const isDaytime = currentH >= 6 && currentH < 18 ? 1 : 0;
+        // Diurnal temperature variation
+        const tempVariation = isDaytime ? Math.sin((currentH - 6) / 12 * Math.PI) * 4 : -2;
+
+        return {
+          time: idx === 0 ? 'NOW' : `${currentH % 12 || 12} ${currentH >= 12 ? 'PM' : 'AM'}`,
+          rawTime: new Date(Date.now() + idx * 3600000).toISOString(),
+          tempC: Math.round(preset.tempC + tempVariation),
+          weatherCode: preset.code,
+          isDay: isDaytime,
+          precipitationProb: preset.code >= 50 ? Math.min(95, 40 + idx * 2) : 5,
+        };
+      });
+
       const resolvedVibe = resolveVibe(preset.code, preset.tempC, preset.isDay);
 
       startTransition(() => {
         setData(mockData);
-        setLocationName(`Simulation: ${preset.name}`);
+        setLocation({
+          specific: `Simulation Matrix: ${preset.name}`,
+          area: 'Virtual Atmosphere Lab',
+          full: `Simulation: ${preset.name}`,
+        });
+        setHourlyForecast(simulatedHourly);
         setVibe(resolvedVibe);
         setIsLoading(false);
       });
@@ -211,7 +358,7 @@ export function useWeather() {
   const selectFallbackCity = useCallback(
     (cityIndex: number) => {
       const city = FALLBACK_LOCATIONS[cityIndex] || FALLBACK_LOCATIONS[0];
-      fetchWeather(city.coords, city.name);
+      fetchWeather(city.coords, city.location);
     },
     [fetchWeather]
   );
@@ -238,7 +385,9 @@ export function useWeather() {
     data,
     vibe,
     coords,
-    locationName,
+    location,
+    locationName: location.full,
+    hourlyForecast,
     isLoading,
     error,
     unit,

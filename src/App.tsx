@@ -11,7 +11,8 @@ export const App: React.FC = () => {
     data,
     vibe,
     coords,
-    locationName,
+    location,
+    hourlyForecast,
     isLoading,
     error,
     unit,
@@ -70,7 +71,8 @@ export const App: React.FC = () => {
             <WeatherCard
               data={data}
               vibe={vibe}
-              locationName={locationName}
+              location={location}
+              hourlyForecast={hourlyForecast}
               coords={coords}
               unit={unit}
               isLoading={isLoading}

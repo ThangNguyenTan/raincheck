@@ -852,3 +852,12 @@ export const PRESET_CONDITIONS = [
   { label: '🔥 Air Fryer Heat', code: 0, tempC: 39, isDay: 1, name: 'Extreme Heat' },
   { label: '🥶 Deep Freeze', code: 71, tempC: -15, isDay: 1, name: 'Polar Cold' },
 ];
+
+export function getWMOCondition(code: number, isDay = 1): { condition: string; emoji: string } {
+  const config = getBaseConfig(code);
+  const variant = isDay === 0 ? config.night : config.day;
+  return {
+    condition: config.condition,
+    emoji: variant.emoji,
+  };
+}

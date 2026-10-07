@@ -3,16 +3,18 @@ import { BrandPill } from './BrandPill';
 import { BouncingEmoji } from './BouncingEmoji';
 import { TempDisplay } from './TempDisplay';
 import { LocationBadge } from './LocationBadge';
+import { HourlyForecast } from './HourlyForecast';
 import { TelemetryGrid } from './TelemetryGrid';
 import { RoastBox } from './RoastBox';
 import { ActionButton } from './ActionButton';
-import type { WeatherData, Coordinates } from '../hooks/useWeather';
+import type { WeatherData, Coordinates, LocationInfo, HourlyForecastItem } from '../hooks/useWeather';
 import type { WeatherVibe } from '../lib/wmoEngine';
 
 interface WeatherCardProps {
   data: WeatherData;
   vibe: WeatherVibe;
-  locationName: string;
+  location: LocationInfo;
+  hourlyForecast: HourlyForecastItem[];
   coords: Coordinates | null;
   unit: 'C' | 'F';
   isLoading: boolean;
@@ -25,7 +27,8 @@ interface WeatherCardProps {
 export const WeatherCard: React.FC<WeatherCardProps> = ({
   data,
   vibe,
-  locationName,
+  location,
+  hourlyForecast,
   coords,
   unit,
   isLoading,
@@ -62,25 +65,29 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
         isExtreme={vibe.isExtremeTemp}
       />
 
-      {/* 4. Location Badge & GPS Refresh */}
+      {/* 4. Granular Location Badge & GPS Refresh */}
       <LocationBadge
-        locationName={locationName}
+        location={location}
+        coords={coords}
         isGPS={!!coords}
         onRequestGPS={onRequestGPS}
         isLoading={isLoading}
       />
 
-      {/* 5. Telemetry Grid (Wind, Humidity, Hazard Level) */}
+      {/* 5. 24-Hour Timeline / Hourly Radar */}
+      <HourlyForecast items={hourlyForecast} unit={unit} />
+
+      {/* 6. Telemetry Grid (Wind, Humidity, Hazard Level) */}
       <TelemetryGrid
         windSpeed={data.windSpeed}
         humidity={data.humidity}
         hazardLevel={vibe.hazardLevel}
       />
 
-      {/* 6. Dynamic Sarcastic Roast Box */}
+      {/* 7. Dynamic Sarcastic Roast Box */}
       <RoastBox vibe={vibe} onReroll={onRerollRoast} />
 
-      {/* 7. Action Button ("CONSULT THE SKY") */}
+      {/* 8. Action Button ("CONSULT THE SKY") */}
       <ActionButton onClick={onConsultSky} isLoading={isLoading} />
     </div>
   );
