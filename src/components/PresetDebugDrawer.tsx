@@ -64,7 +64,7 @@ export const PresetDebugDrawer: React.FC<PresetDebugDrawerProps> = ({
                 <button
                   key={loc.name}
                   onClick={() => onSelectCity(loc.coords, loc.name)}
-                  className="px-2.5 py-1 bg-neutral-100 hover:bg-[#00E5FF] active:translate-x-[1px] active:translate-y-[1px] text-black font-body font-bold text-xs rounded-lg border-2 border-black shadow-neo-sm transition-all cursor-pointer"
+                  className="px-2.5 py-1 bg-neutral-100 hover:bg-[#00E5FF] active:translate-x-[1px] active:translate-y-[1px] text-black font-location font-bold text-xs rounded-lg border-2 border-black shadow-neo-sm transition-all cursor-pointer"
                 >
                   {loc.name}
                 </button>

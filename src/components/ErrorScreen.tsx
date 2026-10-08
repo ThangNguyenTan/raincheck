@@ -59,7 +59,7 @@ export const ErrorScreen: React.FC<ErrorScreenProps> = ({
               <button
                 key={loc.name}
                 onClick={() => onSelectCity(loc.coords, loc.name)}
-                className="p-2 bg-white hover:bg-neutral-100 text-black font-body font-black text-xs rounded-xl border-2 border-black shadow-neo-sm active:translate-x-[1px] active:translate-y-[1px] transition-all truncate cursor-pointer flex items-center gap-1.5"
+                className="p-2 bg-white hover:bg-neutral-100 text-black font-location font-bold text-xs rounded-xl border-2 border-black shadow-neo-sm active:translate-x-[1px] active:translate-y-[1px] transition-all truncate cursor-pointer flex items-center gap-1.5"
               >
                 <Compass className="w-3.5 h-3.5 text-[#FF4757] shrink-0" />
                 <span className="truncate">{loc.name}</span>

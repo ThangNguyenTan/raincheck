@@ -15,6 +15,7 @@ export default {
       fontFamily: {
         display: ['"Fredoka"', 'cursive', 'sans-serif'],
         body: ['"Plus Jakarta Sans"', 'sans-serif'],
+        location: ['"Be Vietnam Pro"', '"Plus Jakarta Sans"', 'sans-serif'],
       },
     },
   },

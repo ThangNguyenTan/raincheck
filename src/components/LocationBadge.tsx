@@ -30,7 +30,7 @@ export const LocationBadge: React.FC<LocationBadgeProps> = ({
             {/* Primary specific location (Ward, District, Street, or Suburb) */}
             <div className="flex items-center gap-1.5 flex-wrap">
               <span
-                className="font-display font-black text-xs sm:text-sm text-black truncate max-w-[200px] sm:max-w-[240px]"
+                className="font-location font-black text-xs sm:text-sm text-black truncate max-w-[200px] sm:max-w-[240px] tracking-tight leading-snug"
                 title={location.specific}
               >
                 {location.specific}
@@ -46,7 +46,7 @@ export const LocationBadge: React.FC<LocationBadgeProps> = ({
             {/* Broader context (City, Province, Country) */}
             {location.area && (
               <span
-                className="text-[10px] font-body font-bold text-neutral-500 truncate max-w-[220px]"
+                className="text-[10px] font-location font-semibold text-neutral-600 truncate max-w-[220px] leading-tight"
                 title={location.area}
               >
                 {location.area}
